@@ -7,7 +7,7 @@ config = {
         "patch_folder": r'C:\Users\s.angerer\Privat\Studium\veg_classification\patches\bands',
         "extract_patches": "True",
         "patch_size": 1.00,
-        "cluster_size": "cl_good",
+        "cluster_size": "cl2",
     },
     "feature_extraction": {
         "include_bands": True,
@@ -21,8 +21,8 @@ config = {
     },
     "classification": {
         "enable_rf": True,
-        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\28_02_24\test_1",
-        "include_hyperparameter_tuning": True,
+        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\28_02_24\test_cl2",
+        "include_hyperparameter_tuning": False,
         "hyperparameters": {
             'n_estimators': [100, 200, 300],
             'max_features': ['log2', 'sqrt'],
