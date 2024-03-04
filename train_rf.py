@@ -55,7 +55,6 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
         class_weights_fold = 'balanced' if use_class_balancing else None
         
         if use_hyperparameter_tuning:
-            # Assuming perform_hyperparameter_tuning is defined elsewhere
             best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, parameter_grid, class_weights_fold)
             logger.info(f"Score Fold: {fold}: {best_score}")
             logger.info(f"Parameters Fold: {fold}: {best_params}")

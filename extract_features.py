@@ -8,7 +8,7 @@ from tqdm import tqdm
 import numpy as np
 import rasterio
 from skimage.feature import graycomatrix, graycoprops
-from config import config  # Ensure config is imported
+from config import config 
 
 def generate_feature_names():
     specific_bands = config['feature_extraction'].get('specific_bands', [])
@@ -118,7 +118,7 @@ def extract_features_from_tiff(tiff_path):
                 band_stats['std'].append(np.std(band))
             if 'percentile_25' in statistics_list:
                 band_stats['percentile_25'].append(np.percentile(band, 25))
-            if 'percentile_50' in statistics_list:  # This is effectively the median
+            if 'percentile_50' in statistics_list: 
                 band_stats['percentile_50'].append(np.percentile(band, 50))
             if 'percentile_75' in statistics_list:
                 band_stats['percentile_75'].append(np.percentile(band, 75))

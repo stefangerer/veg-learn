@@ -2,7 +2,6 @@ import logging
 import os
 
 def setup_logging(results_folder_path):
-    # Check if the folder exists, if not, create it
     if not os.path.exists(results_folder_path):
         os.makedirs(results_folder_path)
 

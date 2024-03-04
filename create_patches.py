@@ -34,7 +34,7 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
             feature_id = row['logger_ID']
 
             # Extract the vegetation cluster ID
-            cluster_id = row[cluster_size]  # Assuming column 3 contains vegetation cluster IDs
+            cluster_id = row[cluster_size] 
 
             # Convert the point to pixel coordinates
             point_pixel_coords = src.index(*point.coords[0])
