@@ -5,12 +5,12 @@ config = {
     },
     "patch_creation": {
         "patch_folder": r'C:\Users\s.angerer\Privat\Studium\veg_classification\patches\bands',
-        "extract_patches": False,
+        "extract_patches": True,
         "patch_size": 1.00,
         "cluster_size": "cl_good",
         "t5_cov_herb_threshold": 5,
         "merge_clusters": True, 
-        "merge_list": [[10, 11]]
+        "merge_list": [[7, 10], [8, 9], ['no_vegetation', 11]]
     },
     "feature_extraction": {
         "include_bands": True,
@@ -24,8 +24,8 @@ config = {
     },
     "classification": {
         "enable_rf": True,
-        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\05_03_24\test_cl_good",
-        "include_hyperparameter_tuning": False,
+        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\05_03_24\test_cl_good_t505",
+        "include_hyperparameter_tuning": True,
         "hyperparameters": {
             'n_estimators': [300],
             'max_features': ['log2', 'sqrt'],
