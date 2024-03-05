@@ -17,7 +17,8 @@ def main():
             config['data_paths']['vegetation_gpkg'], 
             config['patch_creation']['patch_folder'], 
             config['patch_creation']['patch_size'], 
-            config['patch_creation']['cluster_size']
+            config['patch_creation']['cluster_size'],
+            config['patch_creation']['t5_cov_herb_threshold']
         )
         logger.info("Patch extraction completed.")
     

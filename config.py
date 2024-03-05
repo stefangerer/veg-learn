@@ -8,6 +8,7 @@ config = {
         "extract_patches": "True",
         "patch_size": 1.00,
         "cluster_size": "cl2",
+        "t5_cov_herb_threshold": 20
     },
     "feature_extraction": {
         "include_bands": True,
