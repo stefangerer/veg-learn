@@ -37,7 +37,7 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
             cluster_id = row[cluster_size] 
 
             # Extract T5_cov_herb value
-            t5_cov_herb_value = row['t5_cov_herb']
+            t5_cov_herb_value = row['T5_cov_herb']
 
             # Determine the folder based on T5_cov_herb value
             if t5_cov_herb_value < t5_cov_herb_threshold:
@@ -84,7 +84,43 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
 
         # Close the progress bar after processing is finished
         pbar.close()
+
+def merge_folders(parent_directory, folder_pairs, delete_second_folder=False):
+    """
+    Merges files from the second folder into the first folder for each pair in folder_pairs.
+    
+    Parameters:
+    - parent_directory: The path to the parent directory containing the folders to be merged.
+    - folder_pairs: A list of tuples, where each tuple contains two folder names (or IDs)
+      indicating the folders to be merged. Contents of the second folder will be moved to the first.
+    - delete_second_folder: Boolean indicating whether to delete the second folder after merging.
+    """
+    for folder_pair in folder_pairs:
+        first_folder_path = os.path.join(parent_directory, str(folder_pair[0]))
+        second_folder_path = os.path.join(parent_directory, str(folder_pair[1]))
         
+        # Ensure both folders exist
+        if not os.path.exists(first_folder_path):
+            print(f"The folder {first_folder_path} does not exist.")
+            continue
+        if not os.path.exists(second_folder_path):
+            print(f"The folder {second_folder_path} does not exist.")
+            continue
+        
+        # Move files from the second folder to the first folder
+        for filename in os.listdir(second_folder_path):
+            src_file_path = os.path.join(second_folder_path, filename)
+            dst_file_path = os.path.join(first_folder_path, filename)
+            if not os.path.exists(dst_file_path):  # Check to avoid overwriting existing files
+                shutil.move(src_file_path, first_folder_path)
+            else:
+                print(f"File {filename} already exists in {first_folder_path}. Skipping to avoid overwriting.")
+        
+        # Optionally, delete the second folder after merging
+        if delete_second_folder:
+            shutil.rmtree(second_folder_path)
+            print(f"Deleted folder: {second_folder_path}")
+
 def add_vegetation_indices_bands(folder_path, features, output_folder_path):
 
     # Check if the output folder already exists. If so, delete and recreate it.

@@ -22,6 +22,13 @@ def main():
         )
         logger.info("Patch extraction completed.")
     
+    if config['patch_creation']['merge_clusters']:
+        create_patches.merge_folders(
+            config['patch_creation']['patch_folder'],
+            config['patch_creation']['merge_list'],
+            True
+        )
+    
     if config['feature_extraction']['include_indices']:
         logger.info("Starting vegetation indices calculation")
         create_patches.add_vegetation_indices_bands(
