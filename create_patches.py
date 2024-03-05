@@ -7,7 +7,7 @@ import calculate_indices
 import numpy as np
 from tqdm import tqdm
 
-def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m, cluster_size):
+def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m, cluster_size, t5_cov_herb_threshold):
         
     # Read the TIFF file to get its CRS
     with rasterio.open(tiff_path) as src:
@@ -36,6 +36,21 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
             # Extract the vegetation cluster ID
             cluster_id = row[cluster_size] 
 
+            # Extract T5_cov_herb value
+            t5_cov_herb_value = row['t5_cov_herb']
+
+            # Determine the folder based on T5_cov_herb value
+            if t5_cov_herb_value < t5_cov_herb_threshold:
+                cluster_folder = os.path.join(output_folder, 'no_vegetation')
+            else:
+                # Extract the vegetation cluster ID
+                cluster_id = row[cluster_size]
+                cluster_folder = os.path.join(output_folder, f'{cluster_id}')
+
+            # Ensure the cluster folder exists
+            if not os.path.exists(cluster_folder):
+                os.makedirs(cluster_folder)
+
             # Convert the point to pixel coordinates
             point_pixel_coords = src.index(*point.coords[0])
 
@@ -49,11 +64,6 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
 
             # Read the data in the window
             data = src.read(window=window)
-
-            # Save the tile to the respective folder based on vegetation cluster
-            cluster_folder = os.path.join(output_folder, f'{cluster_id}')
-            if not os.path.exists(cluster_folder):
-                os.makedirs(cluster_folder)
 
             tile_path = os.path.join(cluster_folder, f'tile_{feature_id}.tif')
             with rasterio.open(
