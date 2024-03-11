@@ -26,6 +26,7 @@ config = {
         "enable_rf": True,
         "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\05_03_24\test_cl_good_t505",
         "include_hyperparameter_tuning": True,
+        "hyperparameter_cv_type": "leave_one_out", #stratified or leave_one_out
         "hyperparameters": {
             'n_estimators': [300],
             'max_features': ['log2', 'sqrt'],
