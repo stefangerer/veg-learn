@@ -48,7 +48,7 @@ def main():
             data_folder,
             config['classification']['results_folder'],
             config['classification']['include_hyperparameter_tuning'],
-            config['classification']['hyperparameter_cv_type'], 
+            config['classification']['cv_type'], 
             config['classification']['hyperparameters'], 
             config['classification']['include_class_balancing']
         )

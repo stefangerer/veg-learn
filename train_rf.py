@@ -13,7 +13,7 @@ from sklearn.metrics import classification_report, accuracy_score, precision_sco
 
 logger = logging.getLogger(__name__)
 
-def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type='stratified'):
+def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type):
     
     if cv_type == 'stratified':
         # Initialize the GridSearchCV object
@@ -26,7 +26,7 @@ def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fo
             verbose=1
         )
 
-    elif cv_type == "leave_on_out":
+    elif cv_type == 'leave_on_out':
         grid_search = GridSearchCV(
             estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
             param_grid=param_grid,
@@ -45,7 +45,7 @@ def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fo
     # Return the best parameters, score, and estimator
     return grid_search.best_params_, grid_search.best_score_, grid_search.best_estimator_
 
-def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tuning, hyperparameter_cv_type, parameter_grid, use_class_balancing):
+def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tuning, cv_type, parameter_grid, use_class_balancing):
     
     X, y, num_bands = extract_features.load_dataset(data_folder)
 
@@ -71,7 +71,7 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
         class_weights_fold = 'balanced' if use_class_balancing else None
         
         if use_hyperparameter_tuning:
-            best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, parameter_grid, class_weights_fold, cv_type=hyperparameter_cv_type)
+            best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, parameter_grid, class_weights_fold, cv_type)
             logger.info(f"Score Fold: {fold}: {best_score}")
             logger.info(f"Parameters Fold: {fold}: {best_params}")
         else:
