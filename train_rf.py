@@ -8,21 +8,37 @@ import logging
 from sklearn.utils.class_weight import compute_class_weight
 from skimage import io
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import StratifiedKFold, learning_curve, GridSearchCV
+from sklearn.model_selection import StratifiedKFold, GridSearchCV, LeaveOneOut
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_curve, roc_auc_score, auc, balanced_accuracy_score
 
 logger = logging.getLogger(__name__)
 
-def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold):
-    # Initialize the GridSearchCV object
-    grid_search = GridSearchCV(
-        estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
-        param_grid=param_grid,
-        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
-        scoring='balanced_accuracy',
-        n_jobs=-1,
-        verbose=1
-    )
+def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type='stratified'):
+    
+    if cv_type == 'stratified':
+        # Initialize the GridSearchCV object
+        grid_search = GridSearchCV(
+            estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
+            param_grid=param_grid,
+            cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
+            scoring='balanced_accuracy',
+            n_jobs=-1,
+            verbose=1
+        )
+
+    elif cv_type == "leave_on_out":
+        grid_search = GridSearchCV(
+            estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
+            param_grid=param_grid,
+            cv=LeaveOneOut(), 
+            scoring='accuracy',
+            n_jobs=-1,
+            verbose=1
+        )
+    
+    else:
+        raise ValueError("Invalid value for cv_type. Choose 'stratified' or 'leave_one_out'.")
+
     # Fit the model
     grid_search.fit(X_train, y_train)
 
