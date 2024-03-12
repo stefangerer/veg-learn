@@ -41,7 +41,7 @@ def create_image_patches(tiff_path, gpkg_path, output_folder, buffer_distance_m,
 
             # Determine the folder based on T5_cov_herb value
             if t5_cov_herb_value < t5_cov_herb_threshold:
-                cluster_folder = os.path.join(output_folder, 'no_vegetation')
+                cluster_folder = os.path.join(output_folder, 'no_veg')
             else:
                 # Extract the vegetation cluster ID
                 cluster_id = row[cluster_size]

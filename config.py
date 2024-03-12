@@ -1,16 +1,27 @@
+import os
+
+def save_config_to_file(config, results_folder):
+    config_file_path = os.path.join(results_folder, 'config.txt')
+    with open(config_file_path, 'w') as f:
+        for section, options in config.items():
+            f.write(f"[{section}]\n")
+            for key, value in options.items():
+                f.write(f"{key} = {value}\n")
+            f.write("\n")
+
 config = {
     "data_paths": {
         "ortho_tiff": r'C:\Users\s.angerer\Privat\Studium\veg_classification\input_data\Ortho_Schrankogel_32632_6cm.tif',
-        "vegetation_gpkg": r'C:\Users\s.angerer\Privat\Studium\veg_classification\input_data\vegetation_groups_EPSG25832.gpkg'
+        "vegetation_gpkg": r'C:\Users\s.angerer\Privat\Studium\veg_classification\input_data\vegetation_groups_900plots_EPSG25832.gpkg'
     },
     "patch_creation": {
         "patch_folder": r'C:\Users\s.angerer\Privat\Studium\veg_classification\patches\bands',
-        "extract_patches": False,
+        "extract_patches": True,
         "patch_size": 1.00,
         "cluster_size": "cl_good",
-        "t5_cov_herb_threshold": 5,
-        "merge_clusters": False, 
-        "merge_list": [[7, 10], [8, 9], ['no_vegetation', 11]]
+        "t5_cov_herb_threshold": 10,
+        "merge_clusters": True, 
+        "merge_list": [[7, 10], ["no_veg", 9]]
     },
     "feature_extraction": {
         "include_bands": True,
@@ -24,15 +35,15 @@ config = {
     },
     "classification": {
         "enable_rf": True,
-        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\11_03_24\test_cl_good_t505_loocv",
+        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\12_03_24\tr_clgood_t510_loghyper_merge_7_10_9_no_veg",
         "include_hyperparameter_tuning": True,
         "cv_type": 'stratified', #stratified or leave_one_out
         "hyperparameters": {
             'n_estimators': [200],
             'max_features': ['log2', 'sqrt'],
-            'max_depth': [None, 2, 4, 8, 16, 32],  # Log scale
-            'min_samples_split': [2, 4, 8, 16, 32, 64],  # Log scale
-            'min_samples_leaf': [1, 2, 4, 8, 16, 32],  # Log scale
+            'max_depth': [None, 2, 4, 8, 16, 32],  
+            'min_samples_split': [2, 4, 8, 16, 32, 64],  
+            'min_samples_leaf': [1, 2, 4, 8, 16, 32],  
         },
         "include_class_balancing": True
     }

@@ -1,6 +1,6 @@
 import logging
 import log_config
-from config import config
+from config import config, save_config_to_file
 import create_patches
 import train_rf
 
@@ -9,6 +9,9 @@ def main():
     log_config.setup_logging(config['classification']['results_folder'])
     logger = logging.getLogger(__name__)
     logger.info("Starting main execution")
+
+    # Save config file
+    save_config_to_file(config, config['classification']['results_folder'])
 
     if config['patch_creation']['extract_patches']:
         logger.info("Starting patch extraction.")
