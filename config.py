@@ -35,8 +35,8 @@ config = {
     },
     "classification": {
         "enable_rf": True,
-        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\12_03_24\tr_clgood_t510_loghyper_merge_7_10_9_no_veg",
-        "include_hyperparameter_tuning": True,
+        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\13_03_24\test",
+        "include_hyperparameter_tuning": False,
         "cv_type": 'stratified', #stratified or leave_one_out
         "hyperparameters": {
             'n_estimators': [200],

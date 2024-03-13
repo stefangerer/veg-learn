@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import validate_rf
 import logging
+import joblib
 from sklearn.utils.class_weight import compute_class_weight
 from skimage import io
 from sklearn.ensemble import RandomForestClassifier
@@ -115,6 +116,10 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
     # Selecting the best model based on aggregated metrics (example shown for balanced accuracy)
     best_model_index = np.argmax(test_evaluation_metrics['balanced_accuracy'])
     best_model = best_models[best_model_index]
+
+    rf_save_path = os.path.join(output_folder, 'rf_model.joblib')
+    joblib.dump(best_model, rf_save_path)
+    logger.info(f"Trained RF model saved to {rf_save_path}")
 
     feature_importances = best_model.feature_importances_
 
