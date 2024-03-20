@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type):
     
+    print(cv_type)
+
     if cv_type == 'stratified':
         # Initialize the GridSearchCV object
         grid_search = GridSearchCV(
@@ -27,12 +29,12 @@ def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fo
             verbose=1
         )
 
-    elif cv_type == 'leave_on_out':
+    elif cv_type == 'leave_one_out':
         grid_search = GridSearchCV(
             estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
             param_grid=param_grid,
             cv=LeaveOneOut(), 
-            scoring='accuracy',
+            scoring='balanced_accuracy',
             n_jobs=-1,
             verbose=1
         )
