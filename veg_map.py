@@ -8,30 +8,46 @@ import extract_features
 from joblib import load
 import re
 
-def extract_center_square_meters(input_tif_path, output_tif_path, square_size_meters=500):
+def create_map_folders(map_folder):
+    
+    # Base map folder
+    if not os.path.exists(map_folder):
+        os.makedirs(map_folder)
+    
+    # Patches folder within the map folder
+    patches_folder = os.path.join(map_folder, "patches")
+    if not os.path.exists(patches_folder):
+        os.makedirs(patches_folder)
+    
+    # Subfolders for patches: "all_patches" and "all_patches_veg"
+    all_patches_folder = os.path.join(patches_folder, "all_patches")
+    all_patches_veg_folder = os.path.join(patches_folder, "all_patches_veg")
+    
+    for folder in [all_patches_folder, all_patches_veg_folder]:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+    print(f"Created necessary folders in: {map_folder}")
+    return all_patches_folder, all_patches_veg_folder
+
+
+def extract_center_square_meters(input_tif_path, output_folder, square_size_meters):
+    """Extracts a centered square of specified size from a TIFF file and saves it to the specified output folder."""
     with rasterio.open(input_tif_path) as src:
-        # Extract pixel dimensions in meters from the transform (affine) of the raster
         pixel_width_meters = src.transform[0]  # Pixel width in meters
-        pixel_height_meters = abs(src.transform[4])  # Pixel height in meters, which should be positive
+        pixel_height_meters = abs(src.transform[4])  # Pixel height in meters
         
-        # Calculate the number of pixels for the specified square size in meters
         pixels_across_width = int(square_size_meters / pixel_width_meters)
         pixels_across_height = int(square_size_meters / pixel_height_meters)
         
-        # Calculate the window position (centered)
         center_x, center_y = src.width // 2, src.height // 2
         offset_x = pixels_across_width // 2
         offset_y = pixels_across_height // 2
         
         window = Window(center_x - offset_x, center_y - offset_y, pixels_across_width, pixels_across_height)
-        
-        # Read the data from the window
         data = src.read(window=window)
-        
-        # Define the new transform for the square based on the window
         new_transform = src.window_transform(window)
         
-        # Update the metadata for the output file
         out_meta = src.meta.copy()
         out_meta.update({
             "driver": "GTiff",
@@ -40,9 +56,18 @@ def extract_center_square_meters(input_tif_path, output_tif_path, square_size_me
             "transform": new_transform
         })
         
+        # Construct file name
+        output_file_name = f"{square_size_meters}_center_ortho.tif"
+
+        # Construct the full path to save the output TIFF
+        output_tif_path = os.path.join(output_folder, output_file_name)
+        
         # Save the extracted square as a new TIFF
         with rasterio.open(output_tif_path, 'w', **out_meta) as dst:
             dst.write(data)
+
+        print(f"Saved TIFF to {output_tif_path}")
+
 
 def create_all_patches(input_tif, output_folder):
     if not os.path.exists(output_folder):
@@ -87,7 +112,6 @@ def create_all_patches(input_tif, output_folder):
                 # Increment the patch counter after writing each patch
                 patch_number += 1
 
-
 def load_features(folder_path: str):
     X = []
 
@@ -113,8 +137,6 @@ def load_features(folder_path: str):
         X = np.array([])
 
     return X
-
-
 
 def preprocess_predictions(prediction_vector):
     """Preprocess the prediction vector, converting 'no_veg' to 9999 and ensuring all values are integers."""
@@ -170,35 +192,32 @@ def generate_output_raster(folder_path, prediction_vector, output_tif_path):
     with rasterio.open(output_tif_path, 'w', **metadata) as dst:
         dst.write(output_array, 1)
 
+def create_map(input_tif, map_size, map_folder, model_path): 
+    all_patches_folder, all_patches_veg_folder = create_map_folders(map_folder)
+
+    extract_center_square_meters(input_tif, map_folder, map_size)
+    
+    center_square_tif = os.path.join(map_folder, f"{map_size}_center_ortho.tif")
+    
+    create_all_patches(center_square_tif, all_patches_folder)
+    create_patches.add_vegetation_indices_bands(all_patches_folder, config.config["feature_extraction"]["indices"], all_patches_veg_folder)
+    
+    model = load(model_path)
+    features = load_features(all_patches_veg_folder)
+    if features.size > 0:
+        print("features_loaded")
+        predictions = model.predict(features)
+        print("classes predicted")
+    else:
+        print("No features to load. Exiting.")
+        return
+        # Handle the situation appropriately, perhaps by exiting or skipping the prediction step.
+
+    prediction_map = os.path.join(map_folder, f"{map_size}_prediction_map.tif")
+
+    generate_output_raster(all_patches_veg_folder, predictions, prediction_map)
+
+    print("map generated")
 
 
-
-
-big_tif = r"C:\Users\s.angerer\Privat\Studium\veg_classification\input_data\Ortho_Schrankogel_32632_6cm.tif"
-small_tif = r"C:\Users\s.angerer\Privat\Studium\veg_classification\input_data\500_small_Ortho_Schrankogel_32632_6cm.tif"
-output_folder = r"C:\Users\s.angerer\Privat\Studium\veg_classification\500_big_patches"
-output_folder_veg = r"C:\Users\s.angerer\Privat\Studium\veg_classification\500_big_patches_veg"
-output_map = r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\500_map.tif"
-
-extract_center_square_meters(big_tif, small_tif)
-create_all_patches(small_tif, output_folder)
-create_patches.add_vegetation_indices_bands(output_folder, config.config["feature_extraction"]["indices"], output_folder_veg)
-model = load(r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\13_03_24\test\rf_model.joblib")
-features = load_features(output_folder_veg)
-if features.size > 0:
-    print("features_loaded")
-    predictions = model.predict(features)
-    print("classes predicted")
-else:
-    print("No features to load. Exiting.")
-     
-    # Handle the situation appropriately, perhaps by exiting or skipping the prediction step.
-
-predictions = model.predict(features)
-print("classes predicted")
-
-print("generating map")
-
-generate_output_raster(output_folder_veg, predictions, output_map)
-
-print("map generated")
+ 
