@@ -15,7 +15,19 @@ from sklearn.metrics import classification_report, accuracy_score, precision_sco
 logger = logging.getLogger(__name__)
 
 def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type):
-    
+    """
+    Perform hyperparameter tuning for Random Forest.
+
+    Args:
+        X_train (numpy.ndarray): Training features.
+        y_train (numpy.ndarray): Training labels.
+        param_grid (dict): Grid of hyperparameters to search.
+        class_weights_fold (str): Class weights for balancing.
+        cv_type (str): Type of cross-validation, either stratified (3-folds) or leave_one_out cross validation.
+
+    Returns:
+        tuple: Best parameters, best score, and best estimator.
+    """
     if cv_type == 'stratified':
         # Initialize the GridSearchCV object
         grid_search = GridSearchCV(
@@ -47,9 +59,22 @@ def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fo
     return grid_search.best_params_, grid_search.best_score_, grid_search.best_estimator_
 
 def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tuning, cv_type, parameter_grid, use_class_balancing):
+    """
+    Perform Random Forest classification.
+
+    Args:
+        data_folder (str): Folder containing the dataset.
+        output_folder (str): Folder to save the output.
+        use_hyperparameter_tuning (bool): Whether to perform hyperparameter tuning.
+        cv_type (str): Type of cross-validation.
+        parameter_grid (dict): Grid of hyperparameters.
+        use_class_balancing (bool): Whether to use class balancing.
+    """
     
+    # Load datasets
     X, y, num_bands = extract_features.load_dataset(data_folder)
 
+    # Generate feature names
     feature_names = extract_features.generate_feature_names()
 
     os.makedirs(output_folder, exist_ok=True)
@@ -72,15 +97,16 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
         class_weights_fold = 'balanced' if use_class_balancing else None
         
         if use_hyperparameter_tuning:
+            logger.info(f"Hyperparameter-tuning for fold-{fold}")
             best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, parameter_grid, class_weights_fold, cv_type)
-            logger.info(f"Score Fold: {fold}: {best_score}")
-            logger.info(f"Parameters Fold: {fold}: {best_params}")
+            logger.info(f"Score: {best_score}")
+            logger.info(f"Parameters: {best_params}")
         else:
-            best_estimator = RandomForestClassifier(n_estimators=300, 
-                                                    max_depth=10, 
-                                                    max_features='sqrt', 
-                                                    min_samples_leaf=4, 
-                                                    min_samples_split=10, 
+            best_estimator = RandomForestClassifier(n_estimators=100, 
+                                                    max_depth=8, 
+                                                    max_features='log2', 
+                                                    min_samples_leaf=2, 
+                                                    min_samples_split=8, 
                                                     random_state=42, 
                                                     class_weight=class_weights_fold, 
                                                     oob_score=True)
@@ -105,9 +131,7 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
         all_predictions.extend(y_pred_test.tolist())
 
         # Plot Confusion Matrix
-        validate_rf.plot_confusion_matrix(f'Confusion Matrix - Fold {fold}', y_test_fold, y_pred_test, fold_output_folder, y, f'confusion_matrix_fold_{fold}.png')
-
-        #validate_rf.calculate_and_plot_permutation_importance(best_estimator, X_test_fold, y_test_fold, feature_names, os.path.join(fold_output_folder, f'permutation_importances_{fold}.png'))
+        # validate_rf.plot_confusion_matrix(f'Confusion Matrix - Fold {fold}', y_test_fold, y_pred_test, fold_output_folder, y, f'confusion_matrix_fold_{fold}.png')
 
     # Aggregate metrics across folds
     average_test_metrics, std_test_metrics = validate_rf.aggregate_metrics(test_evaluation_metrics)
@@ -117,24 +141,21 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
     best_model_index = np.argmax(test_evaluation_metrics['balanced_accuracy'])
     best_model = best_models[best_model_index]
 
+    # Save model for later usage
     rf_save_path = os.path.join(output_folder, 'rf_model.joblib')
     joblib.dump(best_model, rf_save_path)
-    logger.info(f"Trained RF model saved to {rf_save_path}")
 
+    # Plotting feature importances
     feature_importances = best_model.feature_importances_
-
     validate_rf.plot_feature_importances(feature_importances, feature_names, os.path.join(output_folder, 'feature_importance.png'))
 
+    # Plotting learning curve
     validate_rf.plot_learning_curve(best_model, "Learning Curve (Random Forest)", X, y, skf, os.path.join(output_folder, 'learning_curve.png'))
 
-    # Plotting the aggregated confusion matrix
+    # Plotting aggregated confusion matrix
     validate_rf.plot_confusion_matrix('Confusion Matrix - Aggregated Over All Folds', all_true_labels, all_predictions, output_folder, y, 'confusion_matrix_aggregated.png')
 
+    # Save aggregated test and training scores 
     validate_rf.save_metrics_and_importances("TRAIN SCORES", average_train_metrics, std_train_metrics, file_path=os.path.join(output_folder, 'scores_and_importances.txt'), mode='w')
-
     validate_rf.save_metrics_and_importances("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, 'scores_and_importances.txt'), mode='a')
-
-    validate_rf.save_metrics_and_feature_importances_in_order("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, 'scores_and_importances_in_order.txt'), mode='w')
-
-
-
+    #validate_rf.save_metrics_and_feature_importances_in_order("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, 'scores_and_importances_in_order.txt'), mode='w')

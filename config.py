@@ -16,11 +16,11 @@ config = {
     },
     "patch_creation": {
         "patch_folder": r'C:\Users\s.angerer\Privat\Studium\veg_classification\patches\bands',
-        "extract_patches": False,
+        "extract_patches": True,
         "patch_size": 1.00,
         "cluster_size": "cl_good",
         "t5_cov_herb_threshold": 10,
-        "merge_clusters": False, 
+        "merge_clusters": True, 
         "merge_list": [[7, 10], ["no_veg", 9]]
     },
     "feature_extraction": {
@@ -35,22 +35,22 @@ config = {
     },
     "classification": {
         "enable_rf": True,
-        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\20_03_24\test",
-        "include_hyperparameter_tuning": False,
+        "results_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\results\21_03_24\logging_test",
+        "include_hyperparameter_tuning": True,
         "cv_type": 'stratified', #stratified or leave_one_out
         "hyperparameters": {
             'n_estimators': [200],
             'max_features': ['log2', 'sqrt'],
-            'max_depth': [None, 2, 4, 8, 16, 32],  
-            'min_samples_split': [2, 4, 8, 16, 32, 64],  
-            'min_samples_leaf': [1, 2, 4, 8, 16, 32],  
+            'max_depth': [2, 4, 8, 10],  
+            'min_samples_split': [2, 4, 8, 10],  
+            'min_samples_leaf': [1, 2, 4, 8, 10],  
         },
         "include_class_balancing": True
     },
     "map_generation": {
         "generate_map": True,
-        "map_size": 50,
-        "map_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\maps\20_03_24\50" 
+        "map_size": 25,
+        "map_folder": r"C:\Users\s.angerer\Privat\Studium\veg_classification\maps\21_03_24\25" 
         
     }
 }

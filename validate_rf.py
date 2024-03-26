@@ -121,9 +121,9 @@ def aggregate_metrics(metrics_list):
 
 def plot_feature_importances(importances, feature_names, output_file):
 
-    logger.info(f"--- FEATURE IMPORTANCE ---")
-    for feature, importance in zip(feature_names, importances):
-        logger.info(f"{feature}: {importance}")
+    #logger.info(f"--- FEATURE IMPORTANCE ---")
+    #for feature, importance in zip(feature_names, importances):
+    #    logger.info(f"{feature}: {importance}")
 
     # Sort the feature importances in descending order and get the indices
     indices = np.argsort(importances)[::-1]
