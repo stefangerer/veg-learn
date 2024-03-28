@@ -3,6 +3,8 @@ import log_config
 from config import config, save_config_to_file
 import create_patches
 import train_rf
+import veg_map
+import os
 
 def main():
     # Setup logging
@@ -54,6 +56,13 @@ def main():
             config['classification']['cv_type'], 
             config['classification']['hyperparameters'], 
             config['classification']['include_class_balancing']
+        )
+
+    if config["map_generation"]["generate_maps"]:
+        veg_map.create_maps(
+            config['map_generation']['maps_folder'],
+            os.path.join(config['classification']['results_folder'], 'prediction_maps'),
+            os.path.join(config['classification']['results_folder'], 'rf_model.joblib')
         )
 
 if __name__ == "__main__":

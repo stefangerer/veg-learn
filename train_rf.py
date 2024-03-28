@@ -78,11 +78,11 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
             logger.info(f"Score Fold: {fold}: {best_score}")
             logger.info(f"Parameters Fold: {fold}: {best_params}")
         else:
-            best_estimator = RandomForestClassifier(n_estimators=300, 
-                                                    max_depth=10, 
-                                                    max_features='sqrt', 
-                                                    min_samples_leaf=4, 
-                                                    min_samples_split=10, 
+            best_estimator = RandomForestClassifier(n_estimators=200, 
+                                                    max_depth=8, 
+                                                    max_features='log2', 
+                                                    min_samples_leaf=2, 
+                                                    min_samples_split=8, 
                                                     random_state=42, 
                                                     class_weight=class_weights_fold, 
                                                     oob_score=True)
