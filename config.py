@@ -24,7 +24,7 @@ config = {
         "merge_list": [[7, 10], ["no_veg", 9]]
     },
     "feature_extraction": {
-        "include_bands": False,
+        "include_bands": True,
         "specific_bands": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         "include_indices": False,
         "vi_patch_folder": r'D:\DATA\Masterthesis Angerer\veg_learn\patches\bands_vi',
@@ -35,7 +35,7 @@ config = {
     },
     "classification": {
         "enable_rf": False,
-        "results_folder": r"D:\DATA\Masterthesis Angerer\veg_learn\results\27_03_24\map_test",
+        "results_folder": r"D:\DATA\Masterthesis Angerer\veg_learn\results\28_03_24\map_test",
         "include_hyperparameter_tuning": False,
         "cv_type": 'leave_one_out', #stratified or leave_one_out
         "hyperparameters": {
@@ -49,6 +49,6 @@ config = {
     },
         "map_generation": {
         "generate_maps": True,
-        "maps_folder": r"D:\DATA\Schrankogel\Metashape_Project_Schrankogel\Ortho\LZW_10000x10000px_tiles"
+        "maps_folder": r"D:\DATA\Masterthesis Angerer\map_test"
     }
 }
