@@ -11,6 +11,8 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+plt.ioff()
+
 def calculate_and_plot_permutation_importance(model, X_test, y_test, feature_names, output_folder='output', n_repeats=10, random_state=42):
     """
     Calculate permutation importances, plot them, and save the plot to a file.
@@ -53,6 +55,7 @@ def calculate_and_plot_permutation_importance(model, X_test, y_test, feature_nam
     plot_path = os.path.join(output_folder, 'permutation_importance.png')
     plt.savefig(plot_path)
     print(f"Plot saved to {plot_path}")
+    plt.close()  # Close the figure to free memory
 
 def plot_learning_curve(estimator, title, X, y, cv, output_path, scoring='balanced_accuracy'):
     
@@ -121,9 +124,9 @@ def aggregate_metrics(metrics_list):
 
 def plot_feature_importances(importances, feature_names, output_file):
 
-    logger.info(f"--- FEATURE IMPORTANCE ---")
-    for feature, importance in zip(feature_names, importances):
-        logger.info(f"{feature}: {importance}")
+    # logger.info(f"--- FEATURE IMPORTANCE ---")
+    # for feature, importance in zip(feature_names, importances):
+    #    logger.info(f"{feature}: {importance}")
 
     # Sort the feature importances in descending order and get the indices
     indices = np.argsort(importances)[::-1]

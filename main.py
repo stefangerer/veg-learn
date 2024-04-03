@@ -52,10 +52,9 @@ def main():
         train_rf.perform_rf_classification(
             data_folder,
             config['classification']['results_folder'],
-            config['classification']['include_hyperparameter_tuning'],
-            config['classification']['cv_type'], 
             config['classification']['hyperparameters'], 
-            config['classification']['include_class_balancing']
+            config['classification']['outer_splits'],
+            config['classification']['inner_cv_type']
         )
 
     if config["map_generation"]["generate_maps"]:

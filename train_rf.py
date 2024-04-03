@@ -6,90 +6,53 @@ import seaborn as sns
 import validate_rf
 import logging
 import joblib
-from sklearn.utils.class_weight import compute_class_weight
 from skimage import io
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV, LeaveOneOut
-from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_curve, roc_auc_score, auc, balanced_accuracy_score
 
 logger = logging.getLogger(__name__)
 
-def perform_hyperparameter_tuning(X_train, y_train, param_grid, class_weights_fold, cv_type):
+def perform_hyperparameter_tuning(X_train, y_train, param_grid, cv_type):
+# Define the cross-validator based on the cv_type argument more succinctly
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42) if cv_type == 'stratified' else LeaveOneOut()
     
-    print(cv_type)
-
-    if cv_type == 'stratified':
-        # Initialize the GridSearchCV object
-        grid_search = GridSearchCV(
-            estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
-            param_grid=param_grid,
-            cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
-            scoring='balanced_accuracy',
-            n_jobs=-1,
-            verbose=1
-        )
-
-    elif cv_type == 'leave_one_out':
-        grid_search = GridSearchCV(
-            estimator=RandomForestClassifier(random_state=42, class_weight=class_weights_fold, oob_score=True),
-            param_grid=param_grid,
-            cv=LeaveOneOut(), 
-            scoring='balanced_accuracy',
-            n_jobs=-1,
-            verbose=1
-        )
+    # Initialize GridSearchCV with a more concise approach
+    grid_search = GridSearchCV(
+        estimator=RandomForestClassifier(random_state=42, class_weight='balanced', oob_score=True),
+        param_grid=param_grid,
+        cv=cv,
+        scoring='balanced_accuracy',
+        n_jobs=-1,
+        verbose=1
+    )
     
-    else:
-        raise ValueError("Invalid value for cv_type. Choose 'stratified' or 'leave_one_out'.")
-
-    # Fit the model
+    # Fit the model and return the results
     grid_search.fit(X_train, y_train)
-
-    # Return the best parameters, score, and estimator
     return grid_search.best_params_, grid_search.best_score_, grid_search.best_estimator_
 
-def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tuning, cv_type, parameter_grid, use_class_balancing):
-    
-    X, y, num_bands = extract_features.load_dataset(data_folder)
 
-    feature_names = extract_features.generate_feature_names()
+def perform_nested_cv(X, y, feature_names, param_grid, output_folder, outer_splits, inner_cv_type, name):
 
-    os.makedirs(output_folder, exist_ok=True)
-    fold_output_folder = os.path.join(output_folder, "fold_data")
-    os.makedirs(fold_output_folder, exist_ok=True)
+    logger.info(f"Perform nested cv for {name}")
+
+    # ---> NESTED CROSS VALIDATION <---
 
     # Initialize dictionaries to store evaluation metrics for each fold
     train_evaluation_metrics = {metric: [] for metric in ['accuracy_score', 'precision_score', 'recall_score', 'f1_score', 'kappa_score', 'balanced_accuracy']}
     test_evaluation_metrics = {metric: [] for metric in ['accuracy_score', 'precision_score', 'recall_score', 'f1_score', 'kappa_score', 'balanced_accuracy']}
 
-    best_models = []
     all_true_labels, all_predictions = [], []
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=outer_splits, shuffle=True, random_state=42)
 
     for fold, (train_index, test_index) in enumerate(skf.split(X, y), 1):
         X_train_fold, X_test_fold = X[train_index], X[test_index]
         y_train_fold, y_test_fold = y[train_index], y[test_index]
-        
-        class_weights_fold = 'balanced' if use_class_balancing else None
-        
-        if use_hyperparameter_tuning:
-            best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, parameter_grid, class_weights_fold, cv_type)
-            logger.info(f"Score Fold: {fold}: {best_score}")
-            logger.info(f"Parameters Fold: {fold}: {best_params}")
-        else:
-            best_estimator = RandomForestClassifier(n_estimators=200, 
-                                                    max_depth=8, 
-                                                    max_features='log2', 
-                                                    min_samples_leaf=2, 
-                                                    min_samples_split=8, 
-                                                    random_state=42, 
-                                                    class_weight=class_weights_fold, 
-                                                    oob_score=True)
-            best_estimator.fit(X_train_fold, y_train_fold)
-        
-        best_models.append(best_estimator)
-
+          
+        best_params, best_score, best_estimator = perform_hyperparameter_tuning(X_train_fold, y_train_fold, param_grid, inner_cv_type)
+        logger.info(f"Score Fold-{fold}: {best_score}")
+        logger.info(f"Parameters Fold-{fold}: {best_params}")
+      
         # Calculate and store test metrics for the current fold
         y_pred_test = best_estimator.predict(X_test_fold)
         test_metrics_fold = validate_rf.calculate_metrics(y_test_fold, y_pred_test)
@@ -106,37 +69,63 @@ def perform_rf_classification(data_folder, output_folder, use_hyperparameter_tun
         all_true_labels.extend(y_test_fold.tolist())
         all_predictions.extend(y_pred_test.tolist())
 
-        # Plot Confusion Matrix
-        validate_rf.plot_confusion_matrix(f'Confusion Matrix - Fold {fold}', y_test_fold, y_pred_test, fold_output_folder, y, f'confusion_matrix_fold_{fold}.png')
-
-        #validate_rf.calculate_and_plot_permutation_importance(best_estimator, X_test_fold, y_test_fold, feature_names, os.path.join(fold_output_folder, f'permutation_importances_{fold}.png'))
-
     # Aggregate metrics across folds
     average_test_metrics, std_test_metrics = validate_rf.aggregate_metrics(test_evaluation_metrics)
     average_train_metrics, std_train_metrics = validate_rf.aggregate_metrics(train_evaluation_metrics)
 
-    # Selecting the best model based on aggregated metrics (example shown for balanced accuracy)
-    best_model_index = np.argmax(test_evaluation_metrics['balanced_accuracy'])
-    best_model = best_models[best_model_index]
+    # ---> GENERALIZED MODEL <---
 
-    rf_save_path = os.path.join(output_folder, 'rf_model.joblib')
-    joblib.dump(best_model, rf_save_path)
-    logger.info(f"Trained RF model saved to {rf_save_path}")
+    # Find final model      
+    final_params, final_score, final_estimator = perform_hyperparameter_tuning(X, y, param_grid, inner_cv_type)
+    logger.info(f"Generalized Parameters: {final_params}")
+    logger.info(f"Generalized Score: {final_score}")
 
-    feature_importances = best_model.feature_importances_
+    # ---> SCORINGS <---
 
-    validate_rf.plot_feature_importances(feature_importances, feature_names, os.path.join(output_folder, 'feature_importance.png'))
+    # Plot learning curve for the model trained with LOOCV
+    validate_rf.plot_learning_curve(final_estimator, "Learning Curve", X, y, cv=skf, output_path=os.path.join(output_folder, f'learning_curve_{name}.png'))
 
-    validate_rf.plot_learning_curve(best_model, "Learning Curve (Random Forest)", X, y, skf, os.path.join(output_folder, 'learning_curve.png'))
+    # Save and plot feature importances
+    feature_importances = final_estimator.feature_importances_
+    validate_rf.plot_feature_importances(feature_importances, feature_names, os.path.join(output_folder, f'feature_importance_{name}.png'))
 
     # Plotting the aggregated confusion matrix
-    validate_rf.plot_confusion_matrix('Confusion Matrix - Aggregated Over All Folds', all_true_labels, all_predictions, output_folder, y, 'confusion_matrix_aggregated.png')
+    validate_rf.plot_confusion_matrix('Confusion Matrix', all_true_labels, all_predictions, output_folder, y, f'confusion_matrix_{name}.png')
 
-    validate_rf.save_metrics_and_importances("TRAIN SCORES", average_train_metrics, std_train_metrics, file_path=os.path.join(output_folder, 'scores_and_importances.txt'), mode='w')
+    # Save aggregated validation scores
+    validate_rf.save_metrics_and_importances("TRAIN SCORES", average_train_metrics, std_train_metrics, file_path=os.path.join(output_folder, f'scores_and_importances_{name}.txt'), mode='w')
+    validate_rf.save_metrics_and_importances("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, f'scores_and_importances_{name}.txt'), mode='a')
 
-    validate_rf.save_metrics_and_importances("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, 'scores_and_importances.txt'), mode='a')
+    # Save the final model
+    rf_save_path = os.path.join(output_folder, f'rf_model_{name}.txt.joblib')
+    joblib.dump(final_estimator, rf_save_path)
+    logger.info(f"Trained RF model saved to {rf_save_path}")
 
-    validate_rf.save_metrics_and_feature_importances_in_order("TEST SCORES", average_test_metrics, std_test_metrics, feature_names, feature_importances, os.path.join(output_folder, 'scores_and_importances_in_order.txt'), mode='w')
+    return feature_importances
+
+
+def perform_rf_classification(data_folder, output_folder, parameter_grid, outer_splits, inner_cv_type):
+    
+    X, y, _ = extract_features.load_dataset(data_folder)
+
+    feature_names = extract_features.generate_feature_names()
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    feature_importance = perform_nested_cv(X, y, feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'all_features')
+
+    # Select the top 10 features
+    top10_indices = np.argsort(feature_importance)[::-1][:10]
+    X_top10 = X[:, top10_indices]
+    top10_feature_names = [feature_names[i] for i in top10_indices]
+
+    perform_nested_cv(X_top10, y, top10_feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'top_10_features')
+
+   
+
+
+
+    
 
 
 

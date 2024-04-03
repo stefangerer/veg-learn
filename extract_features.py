@@ -53,6 +53,12 @@ def calculate_textural_features(tiff_path):
         with rasterio.open(tiff_path) as src:
             # Read the NIR band, assuming it is the 12th band
             nir_band = src.read(12)
+            
+            # Check if the range of values in NIR band is zero
+            if nir_band.ptp() == 0:
+                print("Warning: Range of values in NIR band is zero. Cannot perform normalization.")
+                return None
+
             # Normalize NIR band to 8-bit to prepare for GLCM calculation
             nir_band_normalized = ((nir_band - nir_band.min()) / (nir_band.ptp() / 255.0)).astype(np.uint8)
 
@@ -71,6 +77,7 @@ def calculate_textural_features(tiff_path):
         print(f"Error calculating textural features for TIFF file: {tiff_path}")
         print(e)
         return None
+
 
 def extract_features_from_tiff(tiff_path):
     """

@@ -85,6 +85,7 @@ def create_all_patches(input_tif, output_folder):
         # Parallelize patch creation for efficiency
         Parallel(n_jobs=-1)(delayed(create_patch)(patch_coord) for patch_coord in patch_coords)
 
+# Function to flag and load valid features
 def load_features_from_file(file_path):
     """
     Loads features from a single patch file, checking for validity based on pixel values.
@@ -104,6 +105,7 @@ def load_features_from_file(file_path):
             features = extract_features.extract_features_from_tiff(file_path)
             return features, 1  # Return features and valid flag
 
+# Function to iterate this process
 def load_features_parallel(folder_path: str):
     """
     Parallelizes the loading of features from patch files within a given directory.
