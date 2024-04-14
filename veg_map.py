@@ -183,9 +183,10 @@ def generate_output_raster(folder_path, prediction_vector, patch_validity, outpu
         'driver': 'GTiff',
         'height': output_height,
         'width': output_width,
+        'count': 1,
         'transform': from_origin(transform.c, transform.f, transform.a, -transform.e),
         'crs': crs,
-        'dtype': 'int32'
+        'dtype': 'uint8'
     })
 
     output_tif_path = os.path.join(output_folder, "prediction_map.tif")
@@ -222,7 +223,7 @@ def create_map_single(input_tif, map_folder, model):
     all_patches_folder, all_patches_veg_folder = create_map_folders(map_folder)
 
     create_all_patches(input_tif, all_patches_folder)
-    create_patches.add_vegetation_indices_bands(all_patches_folder, config.config["feature_extraction"]["indices"], all_patches_veg_folder)
+    create_patches.add_vegetation_indices_bands(all_patches_folder, config.config["feature_extraction"]["specific_indices"], all_patches_veg_folder)
 
     features_list, patch_validity = load_features_parallel(all_patches_veg_folder)
     features = np.array([f for f in features_list if f is not None])

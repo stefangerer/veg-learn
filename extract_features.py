@@ -11,29 +11,40 @@ from skimage.feature import graycomatrix, graycoprops
 from config import config 
 
 def generate_feature_names():
-    specific_bands = config['feature_extraction'].get('specific_bands', [])
-    statistics_list = config['feature_extraction']['statistics']
-    indices = config['feature_extraction'].get('indices', [])
-    include_textures = config['feature_extraction'].get('include_textures', False)
-    textures = config['feature_extraction'].get('textures', [])
+    multispectral_features = config['feature_extraction'].get('specific_bands', [])
+    
+    include_lidar_features = config['feature_extraction'].get('include_lidar_features', False)
+    lidar_features = config['feature_extraction'].get('specific_lidar_features', [])
 
+    vegetation_indices_features = config['feature_extraction'].get('specific_indices', [])
+    
+    include_textures = config['feature_extraction'].get('include_textures', False)
+    textures_features = config['feature_extraction'].get('specific_textures', [])
+    
+    statistics_list = config['feature_extraction']['statistics']
+    
     feature_names = []
     
     # Generate names for statistical features for specific bands
-    for band_idx in specific_bands:
+    for spectral in multispectral_features:
         for stat in statistics_list:
-            feature_names.append(f"{stat}_band_{band_idx}")
-                    
+            feature_names.append(f"{stat}_{spectral}_channel")
+
+    # Generate names for lidar features
+    if include_lidar_features:
+        for lidar_feature_name in lidar_features:
+            for stat in statistics_list:
+                feature_names.append(f"{stat}_{lidar_feature_name}")                
     # Generate names for statistical features for vegetation indices
-    for vi_name in indices:
+    for vi_name in vegetation_indices_features:
         for stat in statistics_list:
             feature_names.append(f"{stat}_{vi_name}")
 
     # Add names for textural features if included
     if include_textures:
-        for texture in textures:
+        for texture in textures_features:
             feature_names.append(f"{texture}_NIR")
-
+    print(feature_names)
     return feature_names
 
 def calculate_textural_features(tiff_path):
@@ -47,7 +58,7 @@ def calculate_textural_features(tiff_path):
     - A dictionary with keys as feature names and values as the calculated features.
     """
     # Retrieve the list of textural features to calculate from the config
-    textures = config['feature_extraction']['textures']
+    textures = config['feature_extraction']['specific_textures']
     
     try:
         with rasterio.open(tiff_path) as src:
@@ -78,10 +89,9 @@ def calculate_textural_features(tiff_path):
         print(e)
         return None
 
-
 def extract_features_from_tiff(tiff_path):
     """
-    Extracts specified statistical and textural features from a TIFF file.
+    Extracts all statistical and textural features from a TIFF file.
     
     Parameters:
     - tiff_path: str, path to the TIFF file.
@@ -89,46 +99,26 @@ def extract_features_from_tiff(tiff_path):
     Returns:
     - A numpy array of extracted features, or None if an error occurs.
     """
-    # Retrieve the list of statistics to calculate from the config
-    statistics_list = config['feature_extraction']['statistics']
-    specific_bands = config['feature_extraction'].get('specific_bands', [])
-
     try:
         with rasterio.open(tiff_path) as src:
-            bands_data = []
+            # Read all bands
+            bands_data = [src.read(i) for i in range(1, src.count + 1)]
 
-            # Process specific bands if defined
-            if specific_bands:
-                for band_idx in specific_bands:
-                    band = src.read(band_idx)
-                    bands_data.append(band)
-
-            # Always include bands from the 13th onwards
-            for band_idx in range(13, src.count + 1):
-                # Avoid re-adding a band if it's already included in specific_bands
-                if band_idx not in specific_bands:
-                    band = src.read(band_idx)
-                    bands_data.append(band)
+        # Define the list of statistics to calculate
+        statistics_list = config["feature_extraction"]["statistics"]
 
         # Initialize a dictionary to hold statistics for each band
         band_stats = {stat: [] for stat in statistics_list}
 
         # Calculate specified statistics for each band
         for band in bands_data:
-            if 'mean' in statistics_list:
-                band_stats['mean'].append(np.mean(band))
-            if 'max' in statistics_list:
-                band_stats['max'].append(np.max(band))
-            if 'min' in statistics_list:
-                band_stats['min'].append(np.min(band))
-            if 'std' in statistics_list:
-                band_stats['std'].append(np.std(band))
-            if 'percentile_25' in statistics_list:
-                band_stats['percentile_25'].append(np.percentile(band, 25))
-            if 'percentile_50' in statistics_list: 
-                band_stats['percentile_50'].append(np.percentile(band, 50))
-            if 'percentile_75' in statistics_list:
-                band_stats['percentile_75'].append(np.percentile(band, 75))
+            band_stats['mean'].append(np.mean(band))
+            band_stats['max'].append(np.max(band))
+            band_stats['min'].append(np.min(band))
+            band_stats['std'].append(np.std(band))
+            band_stats['percentile_25'].append(np.percentile(band, 25))
+            band_stats['percentile_50'].append(np.percentile(band, 50))
+            band_stats['percentile_75'].append(np.percentile(band, 75))
                 
         # Flatten the statistics into a single feature list
         features = [value for stats in band_stats.values() for value in stats]

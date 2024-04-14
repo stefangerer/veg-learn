@@ -186,3 +186,4 @@ def add_vegetation_indices_bands(folder_path, features, output_folder_path):
 
     # Parallel processing of files
     Parallel(n_jobs=-1)(delayed(process_file)(subdir, filename) for subdir, _, files in os.walk(folder_path) for filename in files if filename.endswith(".tif"))
+

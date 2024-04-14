@@ -22,7 +22,7 @@ def perform_hyperparameter_tuning(X_train, y_train, param_grid, cv_type):
         param_grid=param_grid,
         cv=cv,
         scoring='balanced_accuracy',
-        n_jobs=-1,
+        n_jobs=8,
         verbose=1
     )
     
