@@ -44,7 +44,6 @@ def generate_feature_names():
     if include_textures:
         for texture in textures_features:
             feature_names.append(f"{texture}_NIR")
-    print(feature_names)
     return feature_names
 
 def calculate_textural_features(tiff_path):

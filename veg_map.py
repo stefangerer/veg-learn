@@ -9,6 +9,7 @@ from joblib import load, Parallel, delayed
 from rasterio.transform import from_origin
 import re
 import shutil  # Used for deleting directories
+import add_lidar_data
 
 # Function to create necessary folders for map creation process
 def create_map_folders(map_folder):
@@ -29,15 +30,16 @@ def create_map_folders(map_folder):
     
     # Further subdivide into specific patch types
     all_patches_folder = os.path.join(patches_folder, "all_patches")
+    all_patches_lidar_folder = os.path.join(patches_folder, "all_patches_lidar")
     all_patches_veg_folder = os.path.join(patches_folder, "all_patches_veg")
     
     # Create the specific patch folders if they do not exist
-    for folder in [all_patches_folder, all_patches_veg_folder]:
+    for folder in [all_patches_folder, all_patches_lidar_folder, all_patches_veg_folder]:
         if not os.path.exists(folder):
             os.makedirs(folder)
 
     print(f"Created necessary folders in: {map_folder}")
-    return all_patches_folder, all_patches_veg_folder
+    return all_patches_folder, all_patches_lidar_folder, all_patches_veg_folder
 
 # Function to create patches from input TIFF
 def create_all_patches(input_tif, output_folder):
@@ -155,6 +157,7 @@ def generate_output_raster(folder_path, prediction_vector, patch_validity, outpu
     """
     # Extract spatial reference and metadata from the first patch
     patch_files = sorted(os.listdir(folder_path))
+    print(f"{patch_files}")
     with rasterio.open(os.path.join(folder_path, patch_files[0])) as first_patch:
         metadata = first_patch.meta.copy()
         crs = first_patch.crs
@@ -220,10 +223,16 @@ def create_map_single(input_tif, map_folder, model):
     :param map_folder: Base directory for the map generation process.
     :param model: The trained model used for predictions.
     """
-    all_patches_folder, all_patches_veg_folder = create_map_folders(map_folder)
+    all_patches_folder, all_patches_lidar_folder, all_patches_veg_folder = create_map_folders(map_folder)
 
-    create_all_patches(input_tif, all_patches_folder)
-    create_patches.add_vegetation_indices_bands(all_patches_folder, config.config["feature_extraction"]["specific_indices"], all_patches_veg_folder)
+    if config.config["feature_extraction"]["include_lidar_features"] == True: 
+        create_all_patches(input_tif, all_patches_folder)
+        add_lidar_data.process_lidar_with_patches_map(all_patches_folder, config.config['data_paths']['lidar_tiff_folder'], all_patches_lidar_folder, config.config["feature_extraction"]["specific_lidar_features"])
+        create_patches.add_vegetation_indices_bands(all_patches_lidar_folder, config.config["feature_extraction"]["specific_indices"], all_patches_veg_folder)
+    else: 
+        create_all_patches(input_tif, all_patches_folder)
+        create_patches.add_vegetation_indices_bands(all_patches_folder, config.config["feature_extraction"]["specific_indices"], all_patches_veg_folder)
+
 
     features_list, patch_validity = load_features_parallel(all_patches_veg_folder)
     features = np.array([f for f in features_list if f is not None])
@@ -237,6 +246,7 @@ def create_map_single(input_tif, map_folder, model):
 
     # Cleanup: Delete the temporary patch folders
     shutil.rmtree(all_patches_folder)
+    shutil.rmtree(all_patches_lidar_folder)
     shutil.rmtree(all_patches_veg_folder)
 
     print("Map generated")

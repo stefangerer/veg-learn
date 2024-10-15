@@ -112,14 +112,14 @@ def perform_rf_classification(data_folder, output_folder, parameter_grid, outer_
 
     os.makedirs(output_folder, exist_ok=True)
 
-    feature_importance = perform_nested_cv(X, y, feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'all_features')
+    perform_nested_cv(X, y, feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'all_features')
 
     # Select the top 10 features
-    top10_indices = np.argsort(feature_importance)[::-1][:10]
-    X_top10 = X[:, top10_indices]
-    top10_feature_names = [feature_names[i] for i in top10_indices]
+    # top10_indices = np.argsort(feature_importance)[::-1][:10]
+    # X_top10 = X[:, top10_indices]
+    # top10_feature_names = [feature_names[i] for i in top10_indices]
 
-    perform_nested_cv(X_top10, y, top10_feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'top_10_features')
+    # perform_nested_cv(X_top10, y, top10_feature_names, parameter_grid, output_folder, outer_splits, inner_cv_type, 'top_10_features')
 
    
 
